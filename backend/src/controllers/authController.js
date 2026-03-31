@@ -13,8 +13,8 @@ const register = async (req, res, next) => {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already registered', status: 400 });
 
-    // Only allow student role for public registration
-    const safeRole = 'student';
+    // Only allow student or teacher role for public registration (not admin)
+    const safeRole = (role === 'teacher') ? 'teacher' : 'student';
     const user = await User.create({ name, email, password, role: safeRole });
     const token = generateToken(user._id);
 
