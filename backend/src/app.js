@@ -1,5 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const dns = require('dns');
+// Override DNS to use Google's Public DNS for resolving MongoDB's SRV records
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -43,12 +46,15 @@ app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Dat
 app.use(errorHandler);
 
 // DB & Start
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  family: 4  // Force IPv4 DNS resolution
+})
   .then(() => {
     console.log('✅ MongoDB connected');
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
   })
   .catch(err => { console.error('MongoDB connection error:', err); process.exit(1); });
-
 module.exports = app;
