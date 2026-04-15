@@ -83,8 +83,10 @@ const Results = () => {
               </thead>
               <tbody>
                 {filtered.map(r => {
-                  const mins = r.timeTaken ? Math.floor(r.timeTaken / 60) : 0;
-                  const secs = r.timeTaken ? r.timeTaken % 60 : 0;
+                  const timeSafe = r.timeTaken && r.timeTaken < 86400 ? r.timeTaken : null;
+                  const mins = timeSafe ? Math.floor(timeSafe / 60) : 0;
+                  const secs = timeSafe ? timeSafe % 60 : 0;
+                  const timeStr = timeSafe ? `${mins}m ${secs}s` : 'N/A';
                   return (
                     <tr key={r._id}>
                       <td>
@@ -109,7 +111,7 @@ const Results = () => {
                           {r.percentage >= 50 ? '✓ Passed' : '✗ Failed'}
                         </span>
                       </td>
-                      <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{mins}m {secs}s</td>
+                      <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{timeStr}</td>
                       <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                         {new Date(r.submittedAt).toLocaleDateString()}<br />
                         <span style={{ fontSize: 11 }}>{new Date(r.submittedAt).toLocaleTimeString()}</span>

@@ -20,17 +20,28 @@ const getAllExams = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// GET /api/exams/:id
+// GET /api/exams/:id  (used during active exam - hides correctAnswer from students)
 const getExamById = async (req, res, next) => {
   try {
     const exam = await Exam.findById(req.params.id).populate('createdBy', 'name email');
     if (!exam) return res.status(404).json({ message: 'Exam not found' });
     const questions = await Question.find({ examId: exam._id }).sort({ order: 1 });
-    // Hide answers for students
+    // Hide correctAnswer for students during the active exam
     const safeQuestions = req.user.role === 'student'
       ? questions.map(q => { const o = q.toObject(); delete o.correctAnswer; return o; })
       : questions;
     res.json({ exam, questions: safeQuestions });
+  } catch (err) { next(err); }
+};
+
+// GET /api/exams/:id/review  (used AFTER exam - always includes correctAnswer)
+const getExamForResult = async (req, res, next) => {
+  try {
+    const exam = await Exam.findById(req.params.id).populate('createdBy', 'name email');
+    if (!exam) return res.status(404).json({ message: 'Exam not found' });
+    const questions = await Question.find({ examId: exam._id }).sort({ order: 1 });
+    // Always return correctAnswer for review (exam is already submitted)
+    res.json({ exam, questions });
   } catch (err) { next(err); }
 };
 
@@ -61,4 +72,4 @@ const deleteExam = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { createExam, getAllExams, getExamById, updateExam, deleteExam };
+module.exports = { createExam, getAllExams, getExamById, getExamForResult, updateExam, deleteExam };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { resultAPI } from '../services/api';
 import Layout from '../components/Layout';
 
@@ -56,13 +57,15 @@ const MyResults = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Exam</th><th>Category</th><th>Score</th><th>Percentage</th><th>Status</th><th>Time Taken</th><th>Date</th>
+                  <th>Exam</th><th>Category</th><th>Score</th><th>Percentage</th><th>Status</th><th>Time Taken</th><th>Date</th><th>Review</th>
                 </tr>
               </thead>
               <tbody>
                 {results.map(r => {
-                  const mins = r.timeTaken ? Math.floor(r.timeTaken / 60) : 0;
-                  const secs = r.timeTaken ? r.timeTaken % 60 : 0;
+                  const timeSafe = r.timeTaken && r.timeTaken < 86400 ? r.timeTaken : null;
+                  const mins = timeSafe ? Math.floor(timeSafe / 60) : 0;
+                  const secs = timeSafe ? timeSafe % 60 : 0;
+                  const timeStr = timeSafe ? `${mins}m ${secs}s` : 'N/A';
                   return (
                     <tr key={r._id}>
                       <td style={{ fontWeight: 600 }}>{r.examId?.title || 'N/A'}</td>
@@ -77,8 +80,11 @@ const MyResults = () => {
                         </div>
                       </td>
                       <td><span className={`badge ${r.percentage >= 50 ? 'badge-success' : 'badge-danger'}`}>{r.percentage >= 50 ? '✓ Passed' : '✗ Failed'}</span></td>
-                      <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{mins}m {secs}s</td>
+                      <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{timeStr}</td>
                       <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{new Date(r.submittedAt).toLocaleDateString()}</td>
+                      <td>
+                        <Link to={`/result/${r._id}`} className="btn btn-primary btn-sm">View</Link>
+                      </td>
                     </tr>
                   );
                 })}

@@ -9,6 +9,7 @@ export const authAPI = {
 export const examAPI = {
   getAll: () => api.get('/exams'),
   getById: (id) => api.get(`/exams/${id}`),
+  getByIdForReview: (id) => api.get(`/exams/${id}/review`), // includes correctAnswer for result page
   create: (data) => api.post('/exams', data),
   update: (id, data) => api.put(`/exams/${id}`, data),
   delete: (id) => api.delete(`/exams/${id}`),

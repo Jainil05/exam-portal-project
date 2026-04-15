@@ -27,7 +27,8 @@ const ManageExams = () => {
 
   const loadQuestions = async (exam) => {
     setSelectedExam(exam);
-    const res = await examAPI.getById(exam._id);
+    // Use /review endpoint so teacher sees correctAnswer in question list
+    const res = await examAPI.getByIdForReview(exam._id);
     setQuestions(res.data.questions);
     setActiveTab('questions');
   };

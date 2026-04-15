@@ -17,7 +17,7 @@ const ExamResult = () => {
         const attempt = res.data.attempt;
         setResult(attempt);
         if (attempt.examId?._id) {
-          const er = await examAPI.getById(attempt.examId._id);
+          const er = await examAPI.getByIdForReview(attempt.examId._id);
           setExam(er.data.exam);
           setQuestions(er.data.questions);
         }
@@ -32,8 +32,11 @@ const ExamResult = () => {
   const pct = result.percentage;
   const passed = pct >= 50;
   const deg = Math.round((pct / 100) * 360);
-  const mins = result.timeTaken ? Math.floor(result.timeTaken / 60) : 0;
-  const secs = result.timeTaken ? result.timeTaken % 60 : 0;
+  // Guard against stale timeTaken (old open attempts that were never timed properly)
+  const timeTakenSafe = result.timeTaken && result.timeTaken < 86400 ? result.timeTaken : null;
+  const mins = timeTakenSafe ? Math.floor(timeTakenSafe / 60) : 0;
+  const secs = timeTakenSafe ? timeTakenSafe % 60 : 0;
+  const timeDisplay = timeTakenSafe ? `${mins}m ${secs}s` : 'N/A';
 
   return (
     <Layout>
@@ -61,7 +64,7 @@ const ExamResult = () => {
             <div className="result-stat-label">Total Marks</div>
           </div>
           <div className="result-stat-item">
-            <div className="result-stat-value">{mins}m {secs}s</div>
+            <div className="result-stat-value">{timeDisplay}</div>
             <div className="result-stat-label">Time Taken</div>
           </div>
           <div className="result-stat-item">
@@ -77,8 +80,9 @@ const ExamResult = () => {
           <h3 style={{ marginBottom: 20, fontSize: 16, fontWeight: 700 }}>📋 Answer Review</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {questions.map((q, i) => {
-              const studentAns = result.answers?.find(a => a.questionId === q._id)?.answer;
-              const isCorrect = q.correctAnswer && studentAns?.toLowerCase() === q.correctAnswer?.toLowerCase();
+              // FIX: Convert both IDs to strings before comparing (ObjectId !== ObjectId by reference)
+              const studentAns = result.answers?.find(a => String(a.questionId) === String(q._id))?.answer;
+              const isCorrect = q.correctAnswer && studentAns?.trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase();
               const isShort = q.type === 'short_answer';
               return (
                 <div key={q._id} style={{
@@ -94,11 +98,15 @@ const ExamResult = () => {
                   <div style={{ fontWeight: 600, marginBottom: 10 }}>{q.questionText}</div>
                   {!isShort && (
                     <div style={{ fontSize: 13 }}>
-                      <div style={{ color: 'var(--text-muted)' }}>Your answer: <span style={{ color: isCorrect ? '#34d399' : '#f87171' }}>{studentAns || 'Not answered'}</span></div>
-                      {!isCorrect && <div style={{ color: '#34d399' }}>Correct answer: {q.correctAnswer}</div>}
+                      <div style={{ color: 'var(--text-muted)' }}>Your answer: <span style={{ color: isCorrect ? '#34d399' : '#f87171' }}>{studentAns || <em>Not answered</em>}</span></div>
+                      {!isCorrect && (
+                        <div style={{ color: '#34d399', marginTop: 4 }}>
+                          Correct answer: <strong>{q.correctAnswer || '—'}</strong>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {isShort && <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Your answer: <span style={{ color: 'var(--text-primary)' }}>{studentAns || 'Not answered'}</span></div>}
+                  {isShort && <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Your answer: <span style={{ color: 'var(--text-primary)' }}>{studentAns || <em>Not answered</em>}</span></div>}
                 </div>
               );
             })}

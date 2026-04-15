@@ -21,7 +21,14 @@ const app = express();
 
 // Security
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
+app.use(cors({
+  origin: [
+    process.env.CORS_ORIGIN || 'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+  ],
+  credentials: true
+}));
 
 // Rate limiting
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
